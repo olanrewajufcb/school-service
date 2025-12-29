@@ -1,0 +1,66 @@
+spring:
+  application:
+    name: school-service
+
+  r2dbc:
+    username: school_user
+    password: ${SCHOOL_DB_PASSWORD:school_pwd}
+    properties:
+      schema: school_schema
+    url: r2dbc:postgresql://${DB_HOST:localhost}:5432/emis_db?schema=school_schema
+    pool:
+      max-create-connection-time: 2s
+      initial-size: 5
+      max-size: 10
+
+  flyway:
+    user: school_user
+    password: ${FLYWAY_DB_PASSWORD:school_pwd}
+    url: jdbc:postgresql://${DB_HOST:localhost}:5432/emis_db
+    schemas: school_schema
+    default-schema: school_schema
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    validate-on-migrate: true
+    out-of-order: false
+
+#  security:
+#    oauth2:
+#      resourceserver:
+#        jwt:
+#          issuer-uri: http://localhost:8080/realms/emis
+#  lifecycle:
+#    timeout-per-shutdown-phase: 15s
+
+
+server:
+  port: 8082
+  shutdown: graceful
+  netty:
+    connection-timeout: 2s
+    idle-timeout: 15s
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui
+
+# application-prod.yml
+#springdoc:
+#  swagger-ui:
+#    enabled: false
+#  api-docs:
+#    enabled: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+logging:
+  level:
+    org.springframework.web: DEBUG
+    org.springframework.http.converter: DEBUG
+    org.springframework.validation: DEBUG
+    org.springframework.web.reactive.result.method.annotation: DEBUG
+    io.r2dbc.postgresql.QUERY: DEBUG

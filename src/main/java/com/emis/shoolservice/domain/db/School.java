@@ -1,9 +1,6 @@
 package com.emis.shoolservice.domain.db;
 
-import com.emis.shoolservice.enums.Location;
-import com.emis.shoolservice.enums.SchoolLevel;
-import com.emis.shoolservice.enums.SchoolStatus;
-import com.emis.shoolservice.enums.SchoolType;
+import com.emis.shoolservice.enums.*;
 import lombok.Builder;
 import lombok.Data;
 import org.springframework.data.annotation.Id;
@@ -20,8 +17,7 @@ public class School{
     @Id
     private Long schoolId;
     private String schoolCode;       // Unique identifier "SCH-001"
-    @Column("school_name")
-    private String name;
+    private String schoolName;
     private SchoolType type;
     private SchoolLevel schoolLevel;
     private SchoolStatus status;
@@ -31,7 +27,7 @@ public class School{
     private String principalName;
     private Integer maxStudentsPerClass;
     private Long schoolCapacity;
-    private String academicCalendar;   // "FIRST TERM", "SECOND"
+    private AcademicCalendar academicCalendar;   // "FIRST TERM", "SECOND"
     private LocalDate establishedYear;
     private Location location;
     private String ward;

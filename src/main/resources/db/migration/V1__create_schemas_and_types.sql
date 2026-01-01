@@ -37,7 +37,7 @@ CREATE TYPE school_schema.school_status AS ENUM (
   'ACTIVE', 'INACTIVE', 'CLOSED', 'SHUTDOWN'
 );
 
-CREATE TYPE school_schema.grade_level AS ENUM (
+CREATE TYPE school_schema.school_level AS ENUM (
   'PRE_NURSERY', 'NURSERY', 'PRIMARY',
   'JUNIOR_SECONDARY', 'SENIOR_SECONDARY', 'OTHER'
 );
@@ -56,7 +56,7 @@ CREATE TABLE school_schema.schools (
                                        school_name TEXT NOT NULL,
 
                                        type school_schema.school_type NOT NULL DEFAULT 'PUBLIC',
-                                       school_level school_schema.grade_level NOT NULL DEFAULT 'PRIMARY',
+                                       school_level school_schema.school_level NOT NULL DEFAULT 'PRIMARY',
 
                                        address TEXT,
                                        phone TEXT,

@@ -6,6 +6,7 @@ import com.emis.shoolservice.dto.response.SchoolDetailsResponse;
 
 //import com.emis.shoolservice.security.JwtUserContextExtractor;
 import com.emis.shoolservice.service.SchoolService;
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import java.util.UUID;
 
@@ -30,6 +31,8 @@ public class SchoolServiceController {
 
     private final SchoolService service;
 
+    @Operation(summary = "Create a new school",
+    description = "Create a new school")
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public Mono<SchoolDetailsResponse> createSchool(@Valid @RequestBody CreateSchoolRequest request) {
@@ -41,6 +44,8 @@ public class SchoolServiceController {
 
     }
 
+    @Operation(summary = "Update a school",
+    description = "Update a school")
     @PutMapping("{schoolCode}")
     @ResponseStatus(HttpStatus.OK)
     public Mono<SchoolDetailsResponse> updateSchool(@PathVariable String schoolCode, @Valid @RequestBody UpdateSchoolRequest request) {
@@ -52,6 +57,8 @@ public class SchoolServiceController {
         }
 
 
+        @Operation(summary = "Get school details by schoolCode",
+    description = "Get school details by schoolCode")
     @GetMapping("{schoolCode}")
     @ResponseStatus(HttpStatus.OK)
     public Mono<SchoolDetailsResponse> getSchoolDetails(@PathVariable String schoolCode) {
@@ -61,6 +68,8 @@ public class SchoolServiceController {
                 .contextWrite(ctx -> ctx.put("requestId", requestId));
     }
 
+    @Operation(summary = "Get all schools",
+    description = "Get all schools")
     @GetMapping
     public Mono<Page<SchoolDetailsResponse>> getAllSchools(@RequestParam(defaultValue = "0")
                                                       @Min(value = 0, message = "page must not be less than 0")
@@ -68,7 +77,7 @@ public class SchoolServiceController {
                                                       @RequestParam(defaultValue = "10")
                                                       @Min(value = 1, message = "size must be at least 1")
                                                       int size,
-                                                      @RequestParam(defaultValue = "studentNumber")
+                                                      @RequestParam(defaultValue = "schoolId")
                                                       String sortBy){
         String requestId = UUID.randomUUID().toString();
         Pageable pageable = PageRequest.of(page, size, Sort.by(sortBy));

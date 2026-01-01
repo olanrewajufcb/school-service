@@ -4,9 +4,7 @@ import com.emis.shoolservice.domain.db.School;
 import com.emis.shoolservice.dto.request.CreateSchoolRequest;
 import com.emis.shoolservice.dto.request.UpdateSchoolRequest;
 import com.emis.shoolservice.dto.response.SchoolDetailsResponse;
-import com.emis.shoolservice.exception.SchoolNotFoundException;
-import com.emis.shoolservice.exception.SchoolServiceFailureException;
-import com.emis.shoolservice.exception.SchoolServiceTimeoutException;
+import com.emis.shoolservice.exception.*;
 import com.emis.shoolservice.mapper.SchoolMapper;
 import com.emis.shoolservice.repository.SchoolRepository;
 import com.emis.shoolservice.service.SchoolService;
@@ -18,6 +16,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.reactive.TransactionalOperator;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
@@ -32,23 +31,21 @@ public class SchoolServiceImp implements SchoolService {
     private final SchoolRepository schoolRepository;
     private final AuthorizationService authorizationService;
     private final SchoolMapper schoolMapper;
+    private final TransactionalOperator transactionalOperator;
 
     public Mono<SchoolDetailsResponse> createSchool(CreateSchoolRequest request, String requestId) {
         School school = schoolMapper.toEntity(request);
 
-    return Mono.defer(() -> schoolRepository.save(school))
-        .flatMap(
-            savedSchool -> {
-              log.info("School created with ID: {}", savedSchool.getSchoolId());
-              return Mono.just(schoolMapper.toResponse(savedSchool));
-            })
-        .doOnError(error -> log.error("Failed to create school: {}", error.getMessage()))
-        .onErrorMap(
-            DataIntegrityViolationException.class,
-            ex ->
-                new DataIntegrityViolationException(
-                    "School with name '" + request.name() + "' already exists." + requestId));
+        return Mono.defer(() -> schoolRepository.insertSchool(school))
+                .as(transactionalOperator::transactional)
+                .map(savedSchool -> {
+                    log.info("School created with ID: {}", savedSchool.getSchoolId());
+                    return schoolMapper.toResponse(savedSchool);
+                })
+                .doOnSuccess(resp -> log.info("Successfully created school with code: {}", request.schoolCode()))
+                .onErrorMap(ex -> mapException(ex, request));
     }
+
 
     @Override
     public Mono<SchoolDetailsResponse> updateSchool(UpdateSchoolRequest request, String schoolCode ,String requestId) {
@@ -56,17 +53,14 @@ public class SchoolServiceImp implements SchoolService {
                 .switchIfEmpty(Mono.error(new SchoolNotFoundException(
                         "School with code '" + schoolCode + "' not found. " + requestId)))
                 .flatMap(existingSchool -> {
-                            applyUpdates(existingSchool,schoolCode,request);
-                    return schoolRepository.save(existingSchool);
+                    School updatedSchool = schoolMapper.toUpdateEntity(request);
+                    updatedSchool.setSchoolId(existingSchool.getSchoolId());
+                    return schoolRepository.updateSchool(updatedSchool);
                 })
                 .doOnSuccess(updated -> log.info("School with code '{}' updated successfully.", schoolCode))
                 .doOnError(error -> log.error("Failed to update school: {}", error.getMessage()))
-                .onErrorMap(
-                        DataIntegrityViolationException.class,
-                        ex ->
-                                new DataIntegrityViolationException(
-                                        "Error updating school with code '" + schoolCode + "'. " + requestId))
-                .map(schoolMapper::toResponse);
+                .map(schoolMapper::toResponse)
+                .onErrorMap(ex -> new SchoolServiceFailureException(ex.getMessage()));
     }
 
     @Override
@@ -100,9 +94,6 @@ public class SchoolServiceImp implements SchoolService {
                         })
                 .doOnSuccess(resp -> log.info("Successfully fetched students from the DB"))
                 .onErrorMap(
-                        TimeoutException.class,
-                        ex -> new SchoolServiceTimeoutException("Database timeout", ex))
-                .onErrorMap(
                         error -> {
                             log.error("[{}] Failed to fetch students from the DB : ", requestId, error);
                             return new SchoolServiceFailureException("Failed to fetch students ", error);
@@ -112,7 +103,7 @@ public class SchoolServiceImp implements SchoolService {
 
     private void applyUpdates(School school, String schoolCode, UpdateSchoolRequest request) {
         school.setSchoolCode(schoolCode);
-        school.setName(request.name());
+        school.setSchoolName(request.name());
         school.setType(request.schoolType());
         school.setAddress(request.address());
         school.setSchoolLevel(request.schoolLevel());
@@ -129,5 +120,79 @@ public class SchoolServiceImp implements SchoolService {
         school.setState(request.state());
     }
 
+    private Throwable mapException(Throwable err, CreateSchoolRequest request) {
+        log.error("Error during school creation: {}", err.getMessage());
+
+        if (err instanceof DataIntegrityViolationException) {
+            String msg = err.getMessage();
+            log.error("Logging error: data integrity violation: [{}]", err.getMessage());
+            if (msg != null && msg.contains("unique constraint")) {
+                String constraintName = extractConstraintName(msg);
+                String fieldName = mapConstraintToField(constraintName, request);
+                return new SchoolAlreadyExistsException(
+                        "A school with this " + fieldName + " already exists.",
+                        fieldName,
+                        fieldName
+                );
+            } else {
+                return new SchoolAlreadyExistsException(
+                        "Data integrity violation: Duplicate entry detected",
+                        "unknown",
+                        null
+                );
+            }
+        }
+
+        log.error("Unexpected error creating school: ", err);
+        return new SchoolServiceFailureException("Error creating school: " + err.getMessage());
+    }
+
+    private String extractDuplicateValue(String errorMessage) {
+        if (errorMessage.contains("Key (") && errorMessage.contains(")=(")) {
+            try {
+                // Find "Key (column_name)=(value)"
+                int keyStart = errorMessage.indexOf("Key (");
+                int equalsPos = errorMessage.indexOf(")=(", keyStart);
+                int endPos = errorMessage.indexOf(")", equalsPos + 3);
+
+                if (keyStart != -1 && equalsPos != -1 && endPos != -1) {
+                    String value = errorMessage.substring(equalsPos + 3, endPos).trim();
+                    // Remove parentheses if present: (SCH-002) -> SCH-002
+                    if (value.startsWith("(") && value.endsWith(")")) {
+                        value = value.substring(1, value.length() - 1);
+                    }
+                    return value;
+                }
+            } catch (Exception e) {
+                log.warn("Failed to extract duplicate value from error message", e);
+            }
+        }
+
+        return "unknown";
+    }
+
+    private String extractConstraintName(String errorMessage) {
+
+        if (errorMessage.contains("\"")) {
+            int start = errorMessage.indexOf("\"");
+            int end = errorMessage.lastIndexOf("\"");
+            if (start != -1 && end != -1 && start < end) {
+                return errorMessage.substring(start + 1, end);
+            }
+        }
+        return "unknown";
+    }
+
+    private String mapConstraintToField(String constraintName, CreateSchoolRequest request) {
+        if (constraintName.contains("school_code")) {
+            return request.schoolCode();
+        } else if (constraintName.contains("email")) {
+            return request.email();
+        } else if (constraintName.contains("phone")) {
+            return request.phone();
+        }
+        return constraintName;
+    }
 
 }
+

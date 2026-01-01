@@ -51,6 +51,8 @@ dependencies {
     runtimeOnly 'io.netty:netty-resolver-dns-native-macos:4.1.101.Final:osx-aarch_64'
     implementation 'org.flywaydb:flyway-core'
     runtimeOnly 'org.flywaydb:flyway-database-postgresql'
+    runtimeOnly 'org.postgresql:postgresql'
+
 }
 
 jacoco {

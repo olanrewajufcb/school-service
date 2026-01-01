@@ -64,3 +64,4 @@ logging:
     org.springframework.validation: DEBUG
     org.springframework.web.reactive.result.method.annotation: DEBUG
     io.r2dbc.postgresql.QUERY: DEBUG
+    org.flywaydb: DEBUG

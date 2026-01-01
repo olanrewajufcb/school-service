@@ -3,13 +3,14 @@ package com.emis.shoolservice.dto.response;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+
 import com.emis.shoolservice.enums.SchoolLevel;
 import com.emis.shoolservice.enums.SchoolStatus;
 import com.emis.shoolservice.enums.SchoolType;
 
 public record SchoolDetailsResponse(Long schoolId,
                                     String schoolCode,          // Unique identifier "SCH-001"
-                                    String name,
+                                    String schoolName,
                                     SchoolType type,
                                     SchoolLevel schoolLevel,
                                     String address,

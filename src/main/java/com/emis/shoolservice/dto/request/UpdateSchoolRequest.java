@@ -1,6 +1,7 @@
 package com.emis.shoolservice.dto.request;
 
 
+import com.emis.shoolservice.enums.AcademicCalendar;
 import com.emis.shoolservice.enums.SchoolLevel;
 import com.emis.shoolservice.enums.SchoolStatus;
 import com.emis.shoolservice.enums.SchoolType;
@@ -18,7 +19,7 @@ public record UpdateSchoolRequest(
         String principalName,
         Integer maxStudentsPerClass,
         Long schoolCapacity,
-        String academicCalendar,    // "FIRST TERM", "SECOND"
+        AcademicCalendar academicCalendar,    // "FIRST TERM", "SECOND"
         LocalDate establishedYear,
         String city,
         String lga,

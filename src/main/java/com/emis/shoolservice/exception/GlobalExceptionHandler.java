@@ -145,6 +145,20 @@ public class GlobalExceptionHandler {
         return response;
     }
 
+    @ExceptionHandler(IllegalArgumentException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Map<String, Object> handleIllegalArgument(IllegalArgumentException ex) {
+        log.error("Invalid argument: {}", ex.getMessage());
+
+        Map<String, Object> response = new HashMap<>();
+        response.put(TIMESTAMP, LocalDateTime.now());
+        response.put(STATUS, HttpStatus.BAD_REQUEST.value());
+        response.put(ERROR, BAD_REQUEST);
+        response.put(MESSAGE, ex.getMessage());
+
+        return response;
+    }
+
     @ExceptionHandler(SchoolNotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public Map<String, Object> handleSchoolNotFound(SchoolNotFoundException ex) {

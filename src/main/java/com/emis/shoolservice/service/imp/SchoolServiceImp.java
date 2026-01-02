@@ -147,30 +147,6 @@ public class SchoolServiceImp implements SchoolService {
         return new SchoolServiceFailureException("Error creating school: " + err.getMessage());
     }
 
-    private String extractDuplicateValue(String errorMessage) {
-        if (errorMessage.contains("Key (") && errorMessage.contains(")=(")) {
-            try {
-                // Find "Key (column_name)=(value)"
-                int keyStart = errorMessage.indexOf("Key (");
-                int equalsPos = errorMessage.indexOf(")=(", keyStart);
-                int endPos = errorMessage.indexOf(")", equalsPos + 3);
-
-                if (keyStart != -1 && equalsPos != -1 && endPos != -1) {
-                    String value = errorMessage.substring(equalsPos + 3, endPos).trim();
-                    // Remove parentheses if present: (SCH-002) -> SCH-002
-                    if (value.startsWith("(") && value.endsWith(")")) {
-                        value = value.substring(1, value.length() - 1);
-                    }
-                    return value;
-                }
-            } catch (Exception e) {
-                log.warn("Failed to extract duplicate value from error message", e);
-            }
-        }
-
-        return "unknown";
-    }
-
     private String extractConstraintName(String errorMessage) {
 
         if (errorMessage.contains("\"")) {

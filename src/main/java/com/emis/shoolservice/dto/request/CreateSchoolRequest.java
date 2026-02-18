@@ -16,7 +16,7 @@ public record CreateSchoolRequest(
         String schoolName,
 
         @NotNull(message = "School level is required")
-        SchoolLevel schoolLevel,
+        EducationLevel educationLevel,
 
         SchoolStatus status,
 

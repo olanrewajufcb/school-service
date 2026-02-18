@@ -4,24 +4,23 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum Location {
-    URBAN,
-    RURAL,
-    TOWN;
+    URBAN("Urban"),
+    RURAL_AREA("Rural Area"),
+    VILLAGE("Village"),
+    TOWN("Town");
 
+    private String value;
+    Location(String value){
+        this.value = value;
+    }
     @JsonCreator
     public static Location fromString(String value) {
-        if (value == null || value.trim().isEmpty()) {
-            return null;
-        }
-
-        try {
-            return Location.valueOf(value.trim().toUpperCase());
-        } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException(
-                    "Invalid value for Location: '" + value +
-                            "'. Accepted values are: URBAN, RURAL, TOWN"
-            );
-        }
+       for (Location location : Location.values()){
+           if (location.value.equalsIgnoreCase(value)){
+               return location;
+           }
+       }
+       return null;
     }
 
     @JsonValue

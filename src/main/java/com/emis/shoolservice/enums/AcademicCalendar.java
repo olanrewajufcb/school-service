@@ -4,28 +4,27 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum AcademicCalendar {
-    FIRST_TERM,
-    SECOND_TERM,
-    THIRD_TERM;
+    FIRST_TERM("First Term"),
+    SECOND_TERM("Second Term"),
+    THIRD_TERM("Third Term");
 
+    AcademicCalendar(String value){
+        this.value = value;
+    }
+
+    private final String value;
     @JsonCreator
     public static AcademicCalendar fromString(String value) {
-        if (value == null || value.trim().isEmpty()) {
-            return null;
-        }
-
-        try {
-            return AcademicCalendar.valueOf(value.trim().toUpperCase());
-        } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException(
-                    "Invalid value for AcademicCalendar: '" + value +
-                            "'. Accepted values are: FIRST_TERM, SECOND_TERM, THIRD_TERM"
-            );
-        }
+      for (AcademicCalendar calendar : AcademicCalendar.values()){
+          if (calendar.value.equalsIgnoreCase(value)){
+              return calendar;
+          }
+      }
+      return null;
     }
 
     @JsonValue
     public String toValue() {
-        return this.name();
+        return this.value;
     }
 }

@@ -15,6 +15,7 @@
 //
 //@Configuration
 //@EnableWebFluxSecurity
+//@EnableMethodSecurity
 //public class SecurityConfig {
 //
 //    @Bean
@@ -31,8 +32,6 @@
 //                        .pathMatchers("/favicon.ico").permitAll()
 //                        .pathMatchers("/index.html").permitAll()
 //
-//                        .pathMatchers("/api/v1/schools/**").authenticated()
-//                        .pathMatchers("/api/v1/schools/**").authenticated()
 //                        .anyExchange().authenticated()
 //                )
 //                .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt ->

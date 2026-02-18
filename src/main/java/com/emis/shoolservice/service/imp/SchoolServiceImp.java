@@ -21,7 +21,6 @@ import reactor.core.publisher.Mono;
 
 import java.time.Duration;
 import java.util.List;
-import java.util.concurrent.TimeoutException;
 
 @RequiredArgsConstructor
 @Slf4j
@@ -36,7 +35,7 @@ public class SchoolServiceImp implements SchoolService {
     public Mono<SchoolDetailsResponse> createSchool(CreateSchoolRequest request, String requestId) {
         School school = schoolMapper.toEntity(request);
 
-        return Mono.defer(() -> schoolRepository.insertSchool(school))
+        return Mono.defer(() -> schoolRepository.save(school))
                 .as(transactionalOperator::transactional)
                 .map(savedSchool -> {
                     log.info("School created with ID: {}", savedSchool.getSchoolId());
@@ -55,7 +54,8 @@ public class SchoolServiceImp implements SchoolService {
                 .flatMap(existingSchool -> {
                     School updatedSchool = schoolMapper.toUpdateEntity(request);
                     updatedSchool.setSchoolId(existingSchool.getSchoolId());
-                    return schoolRepository.updateSchool(updatedSchool);
+                    applyUpdates(updatedSchool, schoolCode, request);
+                    return schoolRepository.save(updatedSchool);
                 })
                 .doOnSuccess(updated -> log.info("School with code '{}' updated successfully.", schoolCode))
                 .doOnError(error -> log.error("Failed to update school: {}", error.getMessage()))
@@ -100,20 +100,29 @@ public class SchoolServiceImp implements SchoolService {
                         });
     }
 
+    @Override
+    public Mono<Boolean> validateSchoolExists(String schoolCode, String requestId) {
+        return schoolRepository.existsActiveBySchoolCode(schoolCode)
+                .filter(exists -> exists)
+                .doOnSuccess(exists -> log.info("School with code '{}' exists: {}", schoolCode, exists))
+                .doOnError(error -> log.error("Failed to check if school exists: {}", error.getMessage()))
+                .onErrorMap(ex -> new SchoolServiceFailureException(ex.getMessage()));
+    }
+
 
     private void applyUpdates(School school, String schoolCode, UpdateSchoolRequest request) {
         school.setSchoolCode(schoolCode);
         school.setSchoolName(request.name());
         school.setType(request.schoolType());
         school.setAddress(request.address());
-        school.setSchoolLevel(request.schoolLevel());
+        school.setEducationLevel(request.educationLevel().name());
         school.setMaxStudentsPerClass(request.maxStudentsPerClass());
         school.setSchoolCapacity(request.schoolCapacity());
-        school.setStatus(request.status());
+        school.setStatus(request.status().name());
         school.setPhone(request.phone());
         school.setEmail(request.email());
         school.setPrincipalName(request.principalName());
-        school.setAcademicCalendar(request.academicCalendar());
+        school.setAcademicCalendar(request.academicCalendar().name());
         school.setEstablishedYear(request.establishedYear());
         school.setCity(request.city());
         school.setLga(request.lga());
@@ -134,7 +143,16 @@ public class SchoolServiceImp implements SchoolService {
                         fieldName,
                         fieldName
                 );
-            } else {
+            }else if (msg != null && msg.contains("violates check constraint")) {
+                String constraintName = extractConstraintName(msg);
+                String fieldName = mapConstraintToField(constraintName, request);
+                return new SchoolAlreadyExistsException(
+                        "A constraint violation with this " + fieldName + " occurs.",
+                        fieldName,
+                        fieldName);
+            }
+
+            else {
                 return new SchoolAlreadyExistsException(
                         "Data integrity violation: Duplicate entry detected",
                         "unknown",
@@ -166,6 +184,9 @@ public class SchoolServiceImp implements SchoolService {
             return request.email();
         } else if (constraintName.contains("phone")) {
             return request.phone();
+        }
+        else if (constraintName.contains("location")){
+            return request.location().name();
         }
         return constraintName;
     }

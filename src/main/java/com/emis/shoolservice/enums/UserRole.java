@@ -1,6 +1,9 @@
 package com.emis.shoolservice.enums;
 
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
+
 public enum UserRole {
 
     SYSTEM_ADMIN,
@@ -13,14 +16,18 @@ public enum UserRole {
     STUDENT,
     UNKNOWN;
 
-    public static  UserRole fromString(String role) {
-
-        try{
-            return UserRole.valueOf(role.toUpperCase());
-        } catch (IllegalArgumentException ex) {
-            throw new IllegalArgumentException("Invalid role: " + role);
+    @JsonCreator
+    public static UserRole fromString(String value) {
+        for (UserRole role : UserRole.values()) {
+            if (role.name().equalsIgnoreCase(value)) {
+                return role;
+            }
         }
-
+        return null;
     }
 
+    @JsonValue
+    public String toValue() {
+        return this.name();
+    }
 }

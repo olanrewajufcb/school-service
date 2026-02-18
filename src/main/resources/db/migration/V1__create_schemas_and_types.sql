@@ -17,34 +17,16 @@ CREATE SCHEMA IF NOT EXISTS school_schema AUTHORIZATION school_user;
 GRANT USAGE, CREATE ON SCHEMA school_schema TO school_user;
 
 -- Default privileges
-ALTER DEFAULT PRIVILEGES FOR USER school_user
-IN SCHEMA school_schema
+ALTER DEFAULT PRIVILEGES IN SCHEMA school_schema
 GRANT ALL ON TABLES TO school_user;
 
-ALTER DEFAULT PRIVILEGES FOR USER school_user
-IN SCHEMA school_schema
+ALTER DEFAULT PRIVILEGES IN SCHEMA school_schema
 GRANT ALL ON SEQUENCES TO school_user;
 
 -- =====================
 -- Types
 -- =====================
 
-CREATE TYPE school_schema.school_type AS ENUM (
-  'PRIVATE', 'PUBLIC', 'OTHER'
-);
-
-CREATE TYPE school_schema.school_status AS ENUM (
-  'ACTIVE', 'INACTIVE', 'CLOSED', 'SHUTDOWN'
-);
-
-CREATE TYPE school_schema.school_level AS ENUM (
-  'PRE_NURSERY', 'NURSERY', 'PRIMARY',
-  'JUNIOR_SECONDARY', 'SENIOR_SECONDARY', 'OTHER'
-);
-
-CREATE TYPE school_schema.academic_calendar_type AS ENUM (
-  'FIRST_TERM', 'SECOND_TERM', 'THIRD_TERM'
-);
 
 -- =====================
 -- Tables
@@ -55,8 +37,8 @@ CREATE TABLE school_schema.schools (
                                        school_code VARCHAR(20) UNIQUE NOT NULL,
                                        school_name TEXT NOT NULL,
 
-                                       type school_schema.school_type NOT NULL DEFAULT 'PUBLIC',
-                                       school_level school_schema.school_level NOT NULL DEFAULT 'PRIMARY',
+                                       type VARCHAR(20) NOT NULL DEFAULT 'PUBLIC',
+                                       education_level VARCHAR(20) NOT NULL DEFAULT 'PRIMARY',
 
                                        address TEXT,
                                        phone TEXT,
@@ -66,10 +48,14 @@ CREATE TABLE school_schema.schools (
                                        max_students_per_class INT,
                                        school_capacity INT,
 
-                                       academic_calendar school_schema.academic_calendar_type,
+                                       academic_calendar VARCHAR,
 
                                        established_year DATE,
-                                       status school_schema.school_status DEFAULT 'ACTIVE',
+                                       status VARCHAR(20) DEFAULT 'ACTIVE',
+                                       location VARCHAR (100) check ( location IN (
+                                        'VILLAGE', 'TOWN', 'RURAL_AREA', 'OTHERS','URBAN'
+                                                                                  ) ),
+                                       ward VARCHAR(100),
 
                                        city TEXT,
                                        lga TEXT,
@@ -79,3 +65,8 @@ CREATE TABLE school_schema.schools (
                                        created_at TIMESTAMPTZ DEFAULT NOW(),
                                        updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+CREATE INDEX idx_school_code ON school_schema.schools (school_code);
+CREATE INDEX idx_school_id ON school_schema.schools (school_id);
+CREATE INDEX idx_school_name ON school_schema.schools (school_name);
+CREATE INDEX idx_school_type ON school_schema.schools (type);

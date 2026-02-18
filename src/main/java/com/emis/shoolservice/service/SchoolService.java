@@ -19,4 +19,6 @@ public interface SchoolService {
     Mono<SchoolDetailsResponse> getSchoolDetails(String schoolCode, String requestId);
 
     Mono<Page<SchoolDetailsResponse>> getAllSchools(Pageable pageable, String requestId);
+
+    Mono<Boolean> validateSchoolExists(String schoolCode, String requestId);
 }

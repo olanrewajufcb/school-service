@@ -71,6 +71,7 @@ public class SchoolServiceController {
     @Operation(summary = "Get all schools",
     description = "Get all schools")
     @GetMapping
+    @ResponseStatus(HttpStatus.OK)
     public Mono<Page<SchoolDetailsResponse>> getAllSchools(@RequestParam(defaultValue = "0")
                                                       @Min(value = 0, message = "page must not be less than 0")
                                                       int page,
@@ -85,5 +86,16 @@ public class SchoolServiceController {
                 .doOnSubscribe(sub -> log.info("Getting all schools [requestId={}]", requestId))
                 .contextWrite(ctx -> ctx.put("REQUEST_ID", requestId));
 
+    }
+
+    @Operation(summary = "Validate school exists by schoolCode",
+            description = "Validate school exists by schoolCode")
+    @GetMapping("/validate/{schoolCode}")
+    @ResponseStatus(HttpStatus.OK)
+    public Mono<Boolean> validateSchoolExists(@PathVariable String schoolCode) {
+        String requestId = UUID.randomUUID().toString();
+        return service.validateSchoolExists(schoolCode, requestId)
+                .doOnSubscribe(sub -> log.info("Getting school details with id {}", requestId))
+                .contextWrite(ctx -> ctx.put("requestId", requestId));
     }
 }

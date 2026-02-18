@@ -7,6 +7,7 @@ public record UserContext(
                             String username,
                             String firstName,
                             String lastName,
+                            String schoolCode,
                             UserRole role,
                             String email,
                             String lga,

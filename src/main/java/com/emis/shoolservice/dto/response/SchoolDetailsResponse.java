@@ -4,7 +4,7 @@ package com.emis.shoolservice.dto.response;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-import com.emis.shoolservice.enums.SchoolLevel;
+import com.emis.shoolservice.enums.EducationLevel;
 import com.emis.shoolservice.enums.SchoolStatus;
 import com.emis.shoolservice.enums.SchoolType;
 
@@ -12,7 +12,7 @@ public record SchoolDetailsResponse(Long schoolId,
                                     String schoolCode,          // Unique identifier "SCH-001"
                                     String schoolName,
                                     SchoolType type,
-                                    SchoolLevel schoolLevel,
+                                    EducationLevel educationLevel,
                                     String address,
                                     String phone,
                                     String email,
@@ -22,6 +22,7 @@ public record SchoolDetailsResponse(Long schoolId,
                                     String academicCalendar,    // "FIRST TERM", "SECOND"
                                     LocalDate establishedYear,
                                     String city,
+                                    String ward,
                                     String lga,
                                     String state,
                                     SchoolStatus status,

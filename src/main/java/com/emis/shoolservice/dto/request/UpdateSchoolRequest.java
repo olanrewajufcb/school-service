@@ -2,7 +2,7 @@ package com.emis.shoolservice.dto.request;
 
 
 import com.emis.shoolservice.enums.AcademicCalendar;
-import com.emis.shoolservice.enums.SchoolLevel;
+import com.emis.shoolservice.enums.EducationLevel;
 import com.emis.shoolservice.enums.SchoolStatus;
 import com.emis.shoolservice.enums.SchoolType;
 import java.time.LocalDate;
@@ -10,7 +10,7 @@ import java.time.LocalDate;
 public record UpdateSchoolRequest(
 
         String name,
-        SchoolLevel schoolLevel,
+        EducationLevel educationLevel,
         SchoolStatus status,
         String address,
         String phone,

@@ -1,0 +1,11 @@
+package com.emis.schoolservice.exception;
+
+public class SchoolServiceFailureException extends Throwable {
+  public SchoolServiceFailureException(String message) {
+    super(message);
+  }
+
+  public SchoolServiceFailureException(String message, Throwable cause) {
+    super(message, cause);
+  }
+}

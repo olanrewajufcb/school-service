@@ -25,13 +25,33 @@ spring:
     validate-on-migrate: true
     out-of-order: false
 
-#  security:
-#    oauth2:
-#      resourceserver:
-#        jwt:
-#          issuer-uri: http://localhost:8080/realms/emis
-#  lifecycle:
-#    timeout-per-shutdown-phase: 15s
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8080/realms/emis
+  lifecycle:
+    timeout-per-shutdown-phase: 15s
+
+emis:
+  authorization:
+    actions:
+      CREATE_SCHOOL:
+        roles:
+          - SYSTEM_ADMIN
+          - STATE_ADMIN
+      VIEW_SCHOOL:
+        roles:
+          - SYSTEM_ADMIN
+          - STATE_ADMIN
+          - SCHOOL_ADMIN
+          - LGA_ADMIN
+          - SCHOOL_TEACHER
+          - STUDENT
+          - PARENT
+        service-authorities:
+          - SCHOOL_INTERNAL_READ
+
 
 
 server:

@@ -50,7 +50,7 @@ emis:
           - STUDENT
           - PARENT
         service-authorities:
-          - SCHOOL_INTERNAL_READ
+          - INTERNAL_SERVICE
 
 
 

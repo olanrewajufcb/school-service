@@ -31,7 +31,7 @@ class ActorContextFactoryTest {
                 .claim("sub", "user123")
                 .claim("preferred_username", "user123")
                 .claim("school_code", "SCH-001")
-                .claim("realm_access", Map.of("roles", List.of("SCHOOL_ADMIN", "SCHOOL_STAFF")))
+                .claim("roles", List.of("SCHOOL_ADMIN", "SCHOOL_STAFF"))
                 .build();
         Authentication auth = new JwtAuthenticationToken(jwt);
 
@@ -51,17 +51,16 @@ class ActorContextFactoryTest {
     void fromAuthentication_Service_Success() {
         Jwt jwt = Jwt.withTokenValue("token")
                 .header("alg", "none")
-                .claim("sub", "service-client")
-                .claim("client_id", "service-client")
-                .claim("grant_type", "client_credentials")
-                .claim("resource_access", Map.of("service-client", Map.of("roles", List.of("READ_SCHOOL", "WRITE_SCHOOL"))))
+                .claim("sub", "service-account-client")
+                .claim("preferred_username", "service-account-client")
+                .claim("roles", List.of("READ_SCHOOL", "WRITE_SCHOOL"))
                 .build();
         Authentication auth = new JwtAuthenticationToken(jwt);
 
         StepVerifier.create(factory.fromAuthentication(auth))
                 .assertNext(ctx -> {
                     assertThat(ctx.getType()).isEqualTo(ActorType.SERVICE);
-                    assertThat(ctx.getClientId()).isEqualTo("service-client");
+                    assertThat(ctx.getServiceName()).isEqualTo("service-account-client");
                     assertThat(ctx.getServiceAuthorities()).containsExactlyInAnyOrder("READ_SCHOOL", "WRITE_SCHOOL");
                     assertThat(ctx.isService()).isTrue();
                     assertThat(ctx.isUser()).isFalse();
@@ -71,20 +70,18 @@ class ActorContextFactoryTest {
 
     @Test
     void fromAuthentication_ServiceTokenNoGrantType_Success() {
-        // Token without preferred_username is also considered service token in isServiceToken
         Jwt jwt = Jwt.withTokenValue("token")
                 .header("alg", "none")
-                .claim("sub", "service-client")
-                .claim("client_id", "service-client")
-                // no preferred_username
-                .claim("resource_access", Map.of("service-client", Map.of("roles", List.of("READ_SCHOOL"))))
+                .claim("sub", "service-account-client")
+                .claim("preferred_username", "service-account-client")
+                .claim("roles", List.of("READ_SCHOOL"))
                 .build();
         Authentication auth = new JwtAuthenticationToken(jwt);
 
         StepVerifier.create(factory.fromAuthentication(auth))
                 .assertNext(ctx -> {
                     assertThat(ctx.getType()).isEqualTo(ActorType.SERVICE);
-                    assertThat(ctx.getClientId()).isEqualTo("service-client");
+                    assertThat(ctx.getServiceName()).isEqualTo("service-account-client");
                 })
                 .verifyComplete();
     }
@@ -137,10 +134,9 @@ class ActorContextFactoryTest {
     void fromAuthentication_ServiceMissingRoles_ReturnsEmptyAuthorities() {
         Jwt jwt = Jwt.withTokenValue("token")
                 .header("alg", "none")
-                .claim("sub", "service-client")
-                .claim("client_id", "service-client")
-                .claim("grant_type", "client_credentials")
-                // No resource_access
+                .claim("sub", "service-account-client")
+                .claim("preferred_username", "service-account-client")
+                // No roles
                 .build();
         Authentication auth = new JwtAuthenticationToken(jwt);
 

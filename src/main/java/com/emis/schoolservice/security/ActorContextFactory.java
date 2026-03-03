@@ -10,7 +10,6 @@ import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
@@ -26,26 +25,23 @@ public class ActorContextFactory {
 
         return Mono.defer(() -> {
 
-            String clientId = jwt.getClaimAsString("client_id");
-            String subject = jwt.getSubject();
+            String username = jwt.getClaimAsString("preferred_username");
 
             boolean isService = isServiceToken(jwt);
 
             if (isService) {
-                return buildServiceActor(jwt, clientId);
+                return buildServiceActor(jwt, username);
             } else {
-                return buildUserActor(jwt, subject);
+                return buildUserActor(jwt, username);
             }
         });
     }
 
     private boolean isServiceToken(Jwt jwt) {
-        String clientId  = jwt.getClaimAsString("client_id");
         String preferredUsername = jwt.getClaimAsString("preferred_username");
 
-        return clientId != null &&
-                (preferredUsername == null
-                        || preferredUsername.startsWith("service-account"));
+        return preferredUsername != null &&
+                         preferredUsername.startsWith("service-account");
     }
 
     private Mono<ActorContext> buildUserActor(Jwt jwt, String username) {
@@ -55,6 +51,7 @@ public class ActorContextFactory {
                         .type(ActorType.USER)
                         .username(username)
                         .schoolCode(jwt.getClaimAsString("school_code"))
+                        .email(jwt.getClaimAsString("email"))
                         .userRoles(extractRealmRoles(jwt))
                         .build()
         );
@@ -63,68 +60,43 @@ public class ActorContextFactory {
     private Set<UserRole> extractRealmRoles(Jwt jwt) {
         Set<UserRole> roles = new HashSet<>();
 
-        // 1. Extract from root 'roles' claim (found in user's JWT)
         if (jwt.hasClaim("roles")) {
-            roles.addAll(parseRoles(jwt.getClaim("roles")));
+            Object rolesClaim = jwt.getClaim("roles");
+            if (rolesClaim instanceof Collection<?> rolesList) {
+                rolesList.stream()
+                        .map(Object::toString)
+                        .map(UserRole::fromString)
+                        .filter(Objects::nonNull)
+                        .forEach(roles::add);
+            }
         }
-
-        // 2. Extract from 'realm_access.roles' (standard Keycloak)
-        Map<String, Object> realmAccess = jwt.getClaim("realm_access");
-        if (realmAccess != null && realmAccess.containsKey("roles")) {
-            roles.addAll(parseRoles(realmAccess.get("roles")));
-        }
-
         return roles;
     }
 
-    private Set<UserRole> parseRoles(Object rolesObject) {
-        if (!(rolesObject instanceof Collection<?> roles)) {
-            return Set.of();
-        }
 
-        return roles.stream()
-                .filter(role -> role instanceof String)
-                .map(role -> (String) role)
-                .filter(role -> !role.trim().isEmpty())
-                .map(String::toUpperCase)
-                .map(role -> {
-                    try {
-                        return UserRole.valueOf(role);
-                    } catch (IllegalArgumentException e) {
-                        return null;
-                    }
-                })
-                .filter(Objects::nonNull)
-                .collect(Collectors.toSet());
-    }
 
-    private Mono<ActorContext> buildServiceActor(Jwt jwt, String clientId) {
+    private Mono<ActorContext> buildServiceActor(Jwt jwt, String serviceName) {
 
         return Mono.just(
                 ActorContext.builder()
                         .type(ActorType.SERVICE)
-                        .clientId(clientId)
-                        .serviceAuthorities(extractClientRoles(jwt,clientId))
+                        .serviceName(serviceName)
+                        .serviceAuthorities(extractClientRoles(jwt, serviceName))
                         .build()
         );
     }
 
-    private Set<String> extractClientRoles(Jwt jwt, String clientId) {
-
-        Map<String, Object> resourceAccess = jwt.getClaim("resource_access");
-
-        if (resourceAccess == null || !resourceAccess.containsKey(clientId)) {
-            return Set.of();
+    private Set<String> extractClientRoles(Jwt jwt, String serviceName) {
+        if (jwt.hasClaim("roles")) {
+            Object rolesClaim = jwt.getClaim("roles");
+            if (rolesClaim instanceof Collection<?> rolesList) {
+                return rolesList.stream()
+                        .map(Object::toString)
+                        .collect(java.util.stream.Collectors.toSet());
+            } else if (rolesClaim instanceof String rolesStr) {
+                return Set.of(rolesStr.split(","));
+            }
         }
-
-        Map<String, Object> clientAccess =
-                (Map<String, Object>) resourceAccess.get(clientId);
-
-        Collection<String> roles =
-                (Collection<String>) clientAccess.get("roles");
-
-        return roles == null
-                ? Set.of()
-                : new HashSet<>(roles);
+        return Set.of();
     }
 }

@@ -16,8 +16,9 @@ public class ActorContext {
   private final String username;
   private final String schoolCode;
   private final Set<UserRole> userRoles;
+  private final String email;
 
-  private final String clientId;
+  private final String serviceName;
   private final Set<String> serviceAuthorities;
 
   public boolean isUser() {

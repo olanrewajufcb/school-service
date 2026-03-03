@@ -3,7 +3,6 @@ package com.emis.schoolservice.config;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -47,36 +46,14 @@ public class SecurityConfig {
         ReactiveJwtAuthenticationConverter converter = new ReactiveJwtAuthenticationConverter();
         converter.setJwtGrantedAuthoritiesConverter(
                 jwt -> {
-                    Collection<GrantedAuthority> authorities = new ArrayList<>();
-
-                    // 1. Extract from root 'roles' claim
+                    List<GrantedAuthority> authorities = new ArrayList<>();
                     if (jwt.hasClaim("roles")) {
                         Object roles = jwt.getClaim("roles");
                         if (roles instanceof Collection<?> rolesList) {
                             rolesList.stream()
-                                    .filter(role -> role instanceof String)
-                                    .map(role -> (String) role)
-                                    .forEach(role -> authorities.add(new SimpleGrantedAuthority("ROLE_" + role.toUpperCase())));
-                        }
-                    }
-
-                    // 2. Extract from 'realm_access.roles'
-                    Map<String, Object> realmAccess = jwt.getClaimAsMap("realm_access");
-                    if (realmAccess != null && realmAccess.containsKey("roles")) {
-                        Collection<String> roles = (Collection<String>) realmAccess.get("roles");
-                        roles.forEach(
-                                role -> authorities.add(new SimpleGrantedAuthority("ROLE_" + role.toUpperCase())));
-                    }
-                    Map<String, Object> resourceAccess = jwt.getClaimAsMap("resource_access");
-                    if (resourceAccess != null) {
-                        String clientId = jwt.getClaimAsString("client_id");
-                        if (clientId != null && resourceAccess.containsKey(clientId)) {
-                            Map<String, Object> clientAccess = (Map<String, Object>) resourceAccess.get(clientId);
-                            Collection<String> clientRoles = (Collection<String>) clientAccess.get("roles");
-                            if (clientRoles != null) {
-                                clientRoles.forEach(
-                                        role -> authorities.add(new SimpleGrantedAuthority("ROLE_" + role.toUpperCase())));
-                            }
+                                    .map(Object::toString)
+                                    .forEach(role -> authorities.add(
+                                            new SimpleGrantedAuthority("ROLE_" + role.toUpperCase())));
                         }
                     }
 
@@ -92,7 +69,9 @@ public class SecurityConfig {
 
 
     private boolean isServiceToken(Jwt jwt) {
-        return jwt.hasClaim("client_id") && jwt.getClaim("preferred_username") == null
-                || jwt.getClaimAsString("preferred_username").startsWith("service-account");
+        String roles = jwt.getClaimAsString("roles");
+        String preferredUsername =  jwt.getClaimAsString("preferred_username");
+        return roles != null && roles.contains("INTERNAL_SERVICE")
+                || preferredUsername != null && preferredUsername.startsWith("service-account");
     }
 }

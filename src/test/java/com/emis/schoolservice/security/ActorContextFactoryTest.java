@@ -30,7 +30,7 @@ class ActorContextFactoryTest {
                 .header("alg", "none")
                 .claim("sub", "user123")
                 .claim("preferred_username", "user123")
-                .claim("school_code", "SCH-001")
+                .claim("schoolCode", "SCH-001")
                 .claim("roles", List.of("SCHOOL_ADMIN", "SCHOOL_STAFF"))
                 .build();
         Authentication auth = new JwtAuthenticationToken(jwt);
@@ -43,6 +43,24 @@ class ActorContextFactoryTest {
                     assertThat(ctx.getUserRoles()).containsExactlyInAnyOrder(UserRole.SCHOOL_ADMIN, UserRole.SCHOOL_STAFF);
                     assertThat(ctx.isUser()).isTrue();
                     assertThat(ctx.isService()).isFalse();
+                })
+                .verifyComplete();
+    }
+
+    @Test
+    void fromAuthentication_User_SnakeCaseSchoolCode_Success() {
+        Jwt jwt = Jwt.withTokenValue("token")
+                .header("alg", "none")
+                .claim("sub", "user123")
+                .claim("preferred_username", "user123")
+                .claim("school_code", "SCH-001")
+                .claim("roles", List.of("SCHOOL_ADMIN"))
+                .build();
+        Authentication auth = new JwtAuthenticationToken(jwt);
+
+        StepVerifier.create(factory.fromAuthentication(auth))
+                .assertNext(ctx -> {
+                    assertThat(ctx.getSchoolCode()).isEqualTo("SCH-001");
                 })
                 .verifyComplete();
     }

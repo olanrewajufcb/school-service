@@ -50,11 +50,18 @@ public class ActorContextFactory {
                 ActorContext.builder()
                         .type(ActorType.USER)
                         .username(username)
-                        .schoolCode(jwt.getClaimAsString("school_code"))
+                        .schoolCode(extractSchoolCode(jwt))
                         .email(jwt.getClaimAsString("email"))
                         .userRoles(extractRealmRoles(jwt))
                         .build()
         );
+    }
+
+    private String extractSchoolCode(Jwt jwt) {
+        if (jwt.hasClaim("schoolCode")) {
+            return jwt.getClaimAsString("schoolCode");
+        }
+        return jwt.getClaimAsString("school_code");
     }
 
     private Set<UserRole> extractRealmRoles(Jwt jwt) {
@@ -72,8 +79,6 @@ public class ActorContextFactory {
         }
         return roles;
     }
-
-
 
     private Mono<ActorContext> buildServiceActor(Jwt jwt, String serviceName) {
 

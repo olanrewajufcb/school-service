@@ -52,8 +52,6 @@ emis:
         service-authorities:
           - INTERNAL_SERVICE
 
-
-
 server:
   port: 8082
   shutdown: graceful
@@ -85,3 +83,4 @@ logging:
     org.springframework.web.reactive.result.method.annotation: DEBUG
     io.r2dbc.postgresql.QUERY: DEBUG
     org.flywaydb: DEBUG
+

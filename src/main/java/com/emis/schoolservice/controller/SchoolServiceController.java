@@ -78,7 +78,9 @@ public class SchoolServiceController {
     description = "Get all schools")
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
-    public Mono<Page<SchoolDetailsResponse>> getAllSchools(@RequestParam(defaultValue = "0")
+    public Mono<Page<SchoolDetailsResponse>> getAllSchools(
+            @RequestHeader(required = false) String schoolCode,
+            @RequestParam(defaultValue = "0")
                                                       @Min(value = 0, message = "page must not be less than 0")
                                                       int page,
                                                       @RequestParam(defaultValue = "10")
@@ -86,6 +88,7 @@ public class SchoolServiceController {
                                                       int size,
                                                       @RequestParam(defaultValue = "schoolId")
                                                       String sortBy){
+        log.info("Logging schoolCode {}", schoolCode);
         String requestId = UUID.randomUUID().toString();
         Pageable pageable = PageRequest.of(page, size, Sort.by(sortBy));
         return service.getAllSchools(pageable, requestId)

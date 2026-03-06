@@ -9,6 +9,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
+import java.util.Objects;
+
 @Component
 @Slf4j
 @RequiredArgsConstructor
@@ -57,7 +59,7 @@ public class AuthorizationPolicy {
         if (ctx.getUserRoles().contains(UserRole.STATE_ADMIN))  return true;
         if (ctx.getUserRoles().contains(UserRole.LGA_ADMIN))    return true;
 
-        return schoolCode.equals(ctx.getSchoolCode());
+        return Objects.equals(schoolCode, ctx.getSchoolCode());
     }
 
     private boolean authorizeService(
